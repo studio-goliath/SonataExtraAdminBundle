@@ -89,4 +89,7 @@ class AuditReader implements AuditReaderInterface
         $this->em->flush();
     }
 
+    public function diff($className, $id, $oldRevision, $newRevision)
+    {
+    }
 }
