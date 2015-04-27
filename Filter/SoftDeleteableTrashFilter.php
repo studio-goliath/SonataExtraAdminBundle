@@ -10,6 +10,7 @@ class SoftDeleteableTrashFilter extends SQLFilter
 {
     protected $listener;
     protected $entityManager;
+    protected $ignored = array();
     protected $disabled = array();
 
     public function addFilterConstraint(ClassMetadata $targetEntity, $targetTableAlias)
@@ -32,11 +33,31 @@ class SoftDeleteableTrashFilter extends SQLFilter
         $column = $targetEntity->getQuotedColumnName($config['fieldName'], $platform);
 
         $addCondSql = $platform->getIsNotNullExpression($targetTableAlias.'.'.$column);
+
+        if (is_array($targetEntity->discriminatorColumn) && array_key_exists('name', $targetEntity->discriminatorColumn)) {
+            $discrColumn = $targetEntity->discriminatorColumn['name'];
+
+            foreach ($this->ignored as $ignoredclass => $ignoreddiscr) {
+                if ($class == $ignoredclass) {
+                    $addCondSql = "({$addCondSql}";
+                    foreach($ignoreddiscr as $discr) {
+                        $addCondSql .= " OR {$targetTableAlias}.{$discrColumn} = '{$discr}'";
+                    }
+                    $addCondSql .= ')';
+                }
+            }
+        }
+
         if (isset($config['timeAware']) && $config['timeAware']) {
             $now = $conn->quote(date('Y-m-d H:i:s')); // should use UTC in database and PHP
             $addCondSql = "({$addCondSql} OR {$targetTableAlias}.{$column} > {$now})";
         }
         return $addCondSql;
+    }
+
+    public function ignoreDiscrForEntity($class, $discr)
+    {
+        $this->ignored[$class] = $discr;
     }
 
     public function disableForEntity($class)
