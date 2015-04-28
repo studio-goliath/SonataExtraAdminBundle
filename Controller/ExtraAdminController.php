@@ -165,7 +165,7 @@ class ExtraAdminController extends CRUDController
                 $this->addFlash('sonata_flash_info', $this->get('translator')->trans('flash_untrash_error', array(), 'PicossSonataExtraAdminBundle'));
             }
 
-            return new RedirectResponse($this->admin->generateUrl('list'));
+            return new RedirectResponse($this->admin->generateUrl('trash'));
         }
 
         return $this->render($this->admin->getTemplate('untrash'), array(
