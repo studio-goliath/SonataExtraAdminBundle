@@ -187,7 +187,6 @@ class ExtraAdminController extends CRUDController
         $cmf = $em->getMetadataFactory();
         $metadata = $cmf->getMetadataFor($className);
 
-        // Récupère le listener SoftDeleteable
         $softDeleteListener = false;
         foreach ($evm->getListeners() as $listeners) {
             foreach ($listeners as $listener) {
@@ -201,7 +200,7 @@ class ExtraAdminController extends CRUDController
 
         if ($softDeleteListener) {
             foreach ($metadata->associationMappings as $key => $associationMapping) {
-                if ($associationMapping['isOwningSide'] && $associationMapping['isCascadeRemove']) {
+                if ($associationMapping['isOwningSide']) {
                     $targetEntity = $associationMapping['targetEntity'];
                     $config = $softDeleteListener->getConfiguration($em, $targetEntity);
 
@@ -210,9 +209,10 @@ class ExtraAdminController extends CRUDController
                         $getter = 'get'.ucfirst($associationMapping['fieldName']);
 
                         $relatedObject = $object->$getter();
-
-                        if ($relatedObject->$deletedAtGetter()) {
-                            $restrictions[] = $targetEntity;
+                        if ($relatedObject) {
+                            if ($relatedObject->$deletedAtGetter()) {
+                                $restrictions[] = $relatedObject;
+                            }
                         }
                     }
                 }
