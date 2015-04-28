@@ -92,6 +92,10 @@
                 <source>flash_untrash_error</source>
                 <target>An Error has occurred during item restoration.</target>
             </trans-unit>
+            <trans-unit id="flash_untrash_restriction_error">
+                <source>flash_untrash_restriction_error</source>
+                <target>Item restoration is not possible due to some restrictions. Untrash related items first and try again.</target>
+            </trans-unit>
         </body>
     </file>
 </xliff>

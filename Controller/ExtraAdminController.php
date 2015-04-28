@@ -124,13 +124,21 @@ class ExtraAdminController extends CRUDController
     {
         $em = $this->getDoctrine()->getManager();
         $em->getFilters()->disable('softdeleteable');
-        $em->getFilters()->enable('softdeleteabletrash');
+        // No need here to filter on deleted items only
+        //$em->getFilters()->enable('softdeleteabletrash');
 
         $id     = $this->get('request')->get($this->admin->getIdParameter());
         $object = $this->admin->getObject($id);
 
         if (!$object) {
             throw new NotFoundHttpException(sprintf('unable to find the object with id : %s', $id));
+        }
+
+        $restrictions = $this->getUntrashRestrictions($em, $object);
+
+        if (count($restrictions)>0) {
+            $this->addFlash('sonata_flash_error', $this->get('translator')->trans('flash_untrash_restriction_error', array(), 'PicossSonataExtraAdminBundle'));
+            return new RedirectResponse($this->admin->generateUrl('trash'));
         }
 
         $request = $this->get('request');
@@ -167,4 +175,53 @@ class ExtraAdminController extends CRUDController
         ));
     }
 
+    // Restrict untrash if owned entities are trashed (if products are in collections, that collections are trashed, products have to be trashed as well)
+    protected function getUntrashRestrictions($em, $object)
+    {
+        $restrictions = array();
+
+        $evm = $em->getEventManager();
+
+        $className = get_class($object);
+
+        $cmf = $em->getMetadataFactory();
+        $metadata = $cmf->getMetadataFor($className);
+
+        // Récupère le listener SoftDeleteable
+        $softDeleteListener = false;
+        foreach ($evm->getListeners() as $listeners) {
+            foreach ($listeners as $listener) {
+                if ($listener instanceof \Gedmo\SoftDeleteable\SoftDeleteableListener) {
+                    $softDeleteListener = $listener;
+
+                    break 2;
+                }
+            }
+        }
+
+        if ($softDeleteListener) {
+
+            foreach ($metadata->associationMappings as $key => $associationMapping) {
+                if ($associationMapping['isOwningSide'] && $associationMapping['isCascadeRemove']) {
+                    $targetEntity = $associationMapping['targetEntity'];
+                    $config = $softDeleteListener->getConfiguration($em, $targetEntity);
+
+                    if (isset($config['softDeleteable']) && $config['softDeleteable']) {
+                        $restrictions[] = $targetEntity;
+                        /*
+                        $this->addFlash('sonata_flash_info', $this->get('translator')->trans('flash_untrash_error', array(), 'PicossSonataExtraAdminBundle'));
+
+                        if ($this->isXmlHttpRequest()) {
+                            return $this->renderJson(array('result' => 'error'));
+                        } else {
+                            return new RedirectResponse($this->admin->generateUrl('trash'));
+                        }
+                         */
+                    }
+                }
+            }
+        }
+
+        return $restrictions;
+    }
 }
