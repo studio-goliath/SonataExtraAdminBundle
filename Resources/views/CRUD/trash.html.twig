@@ -53,5 +53,14 @@
     </tbody>
 {% endblock %}
 
-{% block list_filters %}
+{% block javascripts %}
+    {{ parent() }}
+
+    <script type="text/javascript">
+        // Ugly but quick hack to get filters on trash
+        $( document ).ready(function() {
+            var form_action = $('form.sonata-filter-form ').attr('action').replace('/list', '/trash');
+            $('form.sonata-filter-form ').attr('action', form_action);
+        });
+    </script>
 {% endblock %}
