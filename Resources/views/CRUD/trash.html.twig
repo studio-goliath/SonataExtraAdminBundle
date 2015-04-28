@@ -36,13 +36,6 @@
 
 {% endblock %}
 
-{% block list_table %}
-    {{ parent() }}
-    <script type="text/javascript">
-        $('table.table tbody tr td>a').click(function() { return false; })
-    </script>
-{% endblock %}
-
 {% block table_body %}
     <tbody>
     {% for object in admin.datagrid.results %}
