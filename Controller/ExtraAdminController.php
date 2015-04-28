@@ -200,23 +200,20 @@ class ExtraAdminController extends CRUDController
         }
 
         if ($softDeleteListener) {
-
             foreach ($metadata->associationMappings as $key => $associationMapping) {
                 if ($associationMapping['isOwningSide'] && $associationMapping['isCascadeRemove']) {
                     $targetEntity = $associationMapping['targetEntity'];
                     $config = $softDeleteListener->getConfiguration($em, $targetEntity);
 
                     if (isset($config['softDeleteable']) && $config['softDeleteable']) {
-                        $restrictions[] = $targetEntity;
-                        /*
-                        $this->addFlash('sonata_flash_info', $this->get('translator')->trans('flash_untrash_error', array(), 'PicossSonataExtraAdminBundle'));
+                        $deletedAtGetter = 'get'.ucfirst($config['fieldName']);
+                        $getter = 'get'.ucfirst($associationMapping['fieldName']);
 
-                        if ($this->isXmlHttpRequest()) {
-                            return $this->renderJson(array('result' => 'error'));
-                        } else {
-                            return new RedirectResponse($this->admin->generateUrl('trash'));
+                        $relatedObject = $object->$getter();
+
+                        if ($relatedObject->$deletedAtGetter()) {
+                            $restrictions[] = $targetEntity;
                         }
-                         */
                     }
                 }
             }
